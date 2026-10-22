@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Source: docs/brand/icon.svg. The arc sits inside the 66dp safe zone of the 108dp canvas. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path android:pathData="M33.75,65.25c6.75,-13.5 13.5,-20.25 20.25,-20.25s13.5,6.75 20.25,20.25"
+        android:strokeColor="#FFFFFFFF" android:strokeWidth="5.4"
+        android:strokeLineCap="round" android:fillColor="#00000000" />
+</vector>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- HTTPS everywhere, with two exceptions.
+
+     Apple's aerial films (sylvan.apple.com) chain to Apple Root CA, which ships with Apple's
+     platforms but not with Android, so it is trusted here for that host only
+     (raw/apple_root_ca.pem, SHA-256 B0:B1:73:0E:CB:C7:FF:45:05:14:2C:49:F1:29:5E:6E:DA:6B:CA:ED:7E:2C:68:C5:BE:91:B5:A1:10:01:F0:24,
+     valid until 2035-02-09). Android 5.0 and 6.0 ignore this file; there the screensaver plays these
+     films over HTTP from the start (see AerialSaver), which is why cleartext stays allowed.
+
+     The weather and location services use Let's Encrypt, whose root older TVs do not trust; they
+     serve the same over HTTP, and Weather falls back to that. -->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">sylvan.apple.com</domain>
+        <trust-anchors>
+            <certificates src="@raw/apple_root_ca" />
+            <certificates src="system" />
+        </trust-anchors>
+    </domain-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">api.open-meteo.com</domain>
+        <domain includeSubdomains="false">geocoding-api.open-meteo.com</domain>
+        <domain includeSubdomains="false">ipinfo.io</domain>
+    </domain-config>
+</network-security-config>

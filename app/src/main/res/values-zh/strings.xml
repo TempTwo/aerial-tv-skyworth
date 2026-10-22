@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="guard_name">Aerial 桌面守护</string>
+    <string name="guard_description">在不允许更换桌面的电视上，让 Aerial 保持为主屏幕。不会读取任何屏幕内容。</string>
+
+    <string name="greeting_morning">早上好</string>
+    <string name="greeting_afternoon">下午好</string>
+    <string name="greeting_evening">晚上好</string>
+
+    <string name="cc_title">控制中心</string>
+    <string name="cc_inputs">信号源</string>
+    <string name="cc_network">网络</string>
+    <string name="cc_settings">设置</string>
+    <string name="cc_volume">音量</string>
+    <string name="cc_muted">已静音</string>
+    <string name="cc_hidden_apps">隐藏的 App</string>
+    <string name="cc_home_default">Aerial 是默认桌面</string>
+    <string name="cc_home_guarded">桌面守护已开启</string>
+    <string name="cc_home_not_default">尚未设为默认桌面</string>
+    <string name="cc_back">返回</string>
+    <string name="cc_no_inputs">这台电视没有可用的信号源</string>
+
+    <string name="net_ethernet">有线网络</string>
+    <string name="net_wifi">Wi-Fi</string>
+    <string name="net_offline">未连接</string>
+
+    <string name="input_connected">已连接</string>
+    <string name="input_live_tv">电视直播</string>
+    <string name="input_antenna">模拟电视</string>
+    <string name="input_digital">数字电视</string>
+    <string name="input_av">AV</string>
+
+    <string name="menu_move">移动</string>
+    <string name="menu_hide">从主屏幕隐藏</string>
+    <string name="menu_info">应用信息</string>
+    <string name="menu_reset_icon">恢复默认图标</string>
+    <string name="menu_uninstall">卸载</string>
+    <string name="appinfo_version">版本</string>
+    <string name="appinfo_size">大小</string>
+    <string name="appinfo_installed">安装时间</string>
+    <string name="appinfo_launch">启动</string>
+    <string name="appinfo_uninstall">卸载</string>
+    <string name="appinfo_close">关闭</string>
+    <string name="move_hint">用方向键移动 · 按确定键完成</string>
+    <string name="move_hint_touch">用方向键移动，或点一下要放的位置 · 按确定键或点这个 App 完成</string>
+
+    <string name="hidden_title">隐藏的 App</string>
+    <string name="hidden_hint">选择一个 App 放回主屏幕</string>
+    <string name="hidden_empty">没有隐藏的 App</string>
+
+    <string name="launch_failed">无法打开%1$s</string>
+    <string name="unavailable">此电视不支持</string>
+    <string name="cc_brightness">亮度</string>
+    <string name="cc_personalize">个性化</string>
+    <string name="wp_title">个性化</string>
+    <string name="wp_wallpaper">壁纸</string>
+    <string name="wp_weather">天气</string>
+    <string name="wp_weather_none">还没有天气数据，联网后会自动获取。</string>
+    <string name="wp_weather_guessed">按网络自动定位。不对的话，用手机扫右边的二维码设置城市。</string>
+    <string name="wp_weather_chosen">城市在手机上设置，扫右边的二维码可以更改。</string>
+    <string name="wx_clear">晴</string>
+    <string name="wx_partly_cloudy">多云</string>
+    <string name="wx_cloudy">阴</string>
+    <string name="wx_fog">雾</string>
+    <string name="wx_rain">雨</string>
+    <string name="wx_snow">雪</string>
+    <string name="wx_thunder">雷雨</string>
+    <string name="wp_daily">每日精选</string>
+    <string name="wp_daily_latest">每日自动更新</string>
+    <string name="wp_builtin">内置</string>
+    <string name="wp_photos">我的照片</string>
+    <string name="wp_photos_rotate">每天换一张</string>
+    <string name="wp_screensaver">屏幕保护程序</string>
+    <string name="ss_aerial">航拍</string>
+    <string name="ss_photos">照片</string>
+    <string name="ss_clock">时钟</string>
+    <string name="wp_phone_title">用手机设置</string>
+    <string name="wp_phone_body">扫码后在手机上发照片当壁纸、更换 App 图标、设置天气城市。手机和电视需连接同一网络。</string>
+    <string name="wp_phone_offline">电视联网后即可用手机设置。</string>
+    <string name="ss_start">立即开始</string>
+    <string name="ss_delay">开始时间</string>
+    <string name="ss_minutes">%d 分钟</string>
+    <string name="ss_back_hint">提示：在主页第一行按返回键，也可以立即开始屏保。</string>
+    <string name="st_focus_style">焦点样式</string>
+    <string name="st_names">App 名称</string>
+    <string name="st_names_focused">只显示选中的</string>
+    <string name="st_names_all">全部显示</string>
+    <string name="st_focus_high">高对比度</string>
+    <string name="st_focus_standard">标准</string>
+    <string name="st_focus_high_hint">选中的 App 外面加一圈白色描边，离得远也看得清。</string>
+    <string name="st_focus_standard_hint">与 Apple TV 默认一致：选中的 App 只放大浮起。</string>
+    <string name="cc_inputs_settings">信号源设置</string>
+    <string name="cc_inputs_pin">显示在主屏幕（可多选）</string>
+    <string name="cc_inputs_boot">开机时打开（选一个）</string>
+    <string name="cc_inputs_boot_none">不打开，停在 Aerial</string>
+    <string name="cc_inputs_boot_hint">电视开机或从待机唤醒时，直接切到这个信号源。按主页键仍会回到 Aerial。</string>
+    <string name="cc_inputs_pin_hint">选中的信号源会作为磁贴出现在主屏幕最前面，按一下直接切换过去。长按磁贴可以移动或移除。</string>
+    <string name="menu_unpin_source">从主屏幕移除</string>
+    <string name="cc_update_available">有新版本 %s</string>
+    <string name="cc_update_title">Aerial %s</string>
+    <string name="cc_update_current">这台电视上是 Aerial %s。</string>
+    <string name="cc_update_command">在同一网络的电脑上再运行一次安装命令就能升级：</string>
+    <string name="cc_update_agent">也可以对 AI 助手说：「按 aerial.qust.me/agent.md，把电视 %s 上的 Aerial 升级到最新版。」</string>
+    <string name="cc_update_keeps">App、排列顺序、壁纸和设置都会保留。</string>
+    <string name="st_pin">家长密码</string>
+    <string name="st_pin_off">关闭</string>
+    <string name="st_pin_on">开启</string>
+    <string name="st_pin_hint">打开电视设置、把隐藏的 App 加回来之前，要先输入密码。</string>
+    <string name="pin_enter">输入密码</string>
+    <string name="pin_enter_hint">用遥控器的数字键，或下面的键盘。</string>
+    <string name="pin_create">设置密码</string>
+    <string name="pin_create_hint">4 位数字。请记好：忘了只能用电脑通过 ADB 清除。</string>
+    <string name="pin_confirm">再输入一次</string>
+    <string name="pin_wrong">密码不对，请重试。</string>
+    <string name="pin_mismatch">两次输入的不一样，请重新设置。</string>
+</resources>

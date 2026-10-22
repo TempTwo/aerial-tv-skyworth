@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108">
+  <!-- Adaptive-icon canvas: 108 x 108; launchers show the central 72 (safe zone 66).
+       Same mark as the website logo (site/favicon.svg), scaled 2.25x into the visible 72. -->
+  <defs>
+    <linearGradient id="bg" x1="18" y1="18" x2="90" y2="90" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2FD0A5"/>
+      <stop offset="1" stop-color="#5B5BF0"/>
+    </linearGradient>
+  </defs>
+  <rect width="108" height="108" fill="url(#bg)"/>
+  <path d="M33.75 65.25c6.75-13.5 13.5-20.25 20.25-20.25s13.5 6.75 20.25 20.25" fill="none" stroke="#FFFFFF" stroke-width="5.4" stroke-linecap="round"/>
+</svg>

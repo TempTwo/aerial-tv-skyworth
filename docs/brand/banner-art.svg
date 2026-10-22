@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180">
+  <!-- TV banner (320 x 180 dp). tools/render-brand.py draws the "Aerial" wordmark on top. -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="320" y2="180" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2FD0A5"/>
+      <stop offset="1" stop-color="#5B5BF0"/>
+    </linearGradient>
+  </defs>
+  <rect width="320" height="180" fill="url(#bg)"/>
+  <path d="M60 104c8-16 16-24 24-24s16 8 24 24" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round"/>
+</svg>

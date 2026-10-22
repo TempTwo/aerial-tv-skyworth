@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<title>Aerial</title>
+<style>
+  :root {
+    --bg: #f2f2f7; --card: #ffffff; --label: #000; --secondary: rgba(60,60,67,.6);
+    --sep: rgba(60,60,67,.18); --segment: #fff; --tint: #007aff; --fill: rgba(118,118,128,.12); --danger: #ff3b30;
+    --shadow: 0 1px 2px rgba(0,0,0,.06), 0 8px 24px rgba(0,0,0,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #000; --card: #1c1c1e; --label: #fff; --secondary: rgba(235,235,245,.6);
+      --sep: rgba(84,84,88,.6); --segment: #636366; --tint: #0a84ff; --fill: rgba(118,118,128,.24); --danger: #ff453a;
+      --shadow: none;
+    }
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--label);
+    font: 17px/1.35 -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "HarmonyOS Sans SC", "MiSans", system-ui, sans-serif;
+    padding: env(safe-area-inset-top) 16px calc(32px + env(safe-area-inset-bottom));
+    max-width: 720px; margin-inline: auto;
+  }
+  header { padding: 28px 4px 8px; }
+  header h1 { font-size: 34px; font-weight: 700; letter-spacing: -.02em; margin: 0; }
+  header p { margin: 4px 0 0; color: var(--secondary); font-size: 15px; }
+  h2 { font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: .02em; color: var(--secondary); margin: 28px 4px 8px; }
+  .group { background: var(--card); border-radius: 14px; box-shadow: var(--shadow); overflow: hidden; }
+  .segmented { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--fill); border-radius: 10px; padding: 2px; gap: 2px; }
+  .segmented.two { grid-template-columns: repeat(2, 1fr); }
+  .segmented button {
+    appearance: none; border: 0; background: transparent; color: var(--label); font: inherit; font-size: 15px; font-weight: 500;
+    padding: 9px 0; border-radius: 8px; transition: background .2s ease, box-shadow .2s ease;
+  }
+  .segmented button[aria-pressed="true"] { background: var(--segment); box-shadow: 0 1px 4px rgba(0,0,0,.12); font-weight: 600; }
+  .segmented button:active { transform: scale(.97); }
+  .hint { color: var(--secondary); font-size: 13px; margin: 8px 4px 0; }
+  .upload {
+    display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+    padding: 15px; border: 0; border-radius: 14px; background: var(--tint); color: #fff;
+    font: inherit; font-weight: 600; transition: transform .16s ease-out, opacity .2s ease;
+  }
+  .upload:active { transform: scale(.98); }
+  .upload[disabled] { opacity: .6; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  .wp { position: relative; border: 0; padding: 0; background: none; color: inherit; font: inherit; text-align: left; }
+  .wp img, .wp .ph {
+    display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 12px; background: var(--fill);
+    transition: transform .2s ease-out, box-shadow .2s ease;
+  }
+  .wp:active img { transform: scale(.97); }
+  .wp .t { font-size: 14px; font-weight: 500; margin: 6px 2px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .wp .c { font-size: 12px; color: var(--secondary); margin: 1px 2px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .wp[aria-selected="true"] img { box-shadow: 0 0 0 3px var(--bg), 0 0 0 6px var(--tint); }
+  .check {
+    position: absolute; top: 8px; right: 8px; width: 24px; height: 24px; border-radius: 50%;
+    background: var(--tint); color: #fff; display: none; align-items: center; justify-content: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,.3);
+  }
+  .wp[aria-selected="true"] .check { display: flex; }
+  .del {
+    position: absolute; top: 8px; left: 8px; width: 26px; height: 26px; border-radius: 50%; border: 0;
+    background: rgba(0,0,0,.55); color: #fff; font-size: 15px; line-height: 26px; padding: 0;
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  }
+  .toast {
+    position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translate(-50%, 20px);
+    background: rgba(30,30,30,.92); color: #fff; padding: 10px 18px; border-radius: 22px; font-size: 15px;
+    opacity: 0; transition: opacity .2s ease, transform .3s cubic-bezier(.23,1,.32,1); pointer-events: none;
+    -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+  }
+  .toast.on { opacity: 1; transform: translate(-50%, 0); }
+  .empty { color: var(--secondary); font-size: 15px; padding: 4px; }
+  .wx { display: flex; align-items: baseline; gap: 10px; padding: 14px 16px; }
+  .wx b { font-size: 28px; font-weight: 600; letter-spacing: -.01em; }
+  .wx span { color: var(--secondary); font-size: 15px; }
+  .city { display: flex; gap: 8px; margin-top: 10px; }
+  .city input {
+    flex: 1; min-width: 0; font: inherit; font-size: 16px; color: var(--label); background: var(--card);
+    border: 0; border-radius: 10px; padding: 11px 12px; box-shadow: var(--shadow); outline: none;
+  }
+  .city input:focus { box-shadow: 0 0 0 2px var(--tint); }
+  .city button {
+    font: inherit; font-weight: 600; font-size: 15px; border: 0; border-radius: 10px; padding: 0 16px;
+    background: var(--tint); color: #fff; transition: transform .16s ease-out, opacity .2s ease;
+  }
+  .city button:active { transform: scale(.97); }
+  .city button[disabled] { opacity: .6; }
+  .link { appearance: none; border: 0; background: none; color: var(--tint); font: inherit; font-size: 13px; padding: 0; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Aerial</h1>
+  <p>{{DEVICE}} · 个性化</p>
+</header>
+
+<h2>屏幕保护程序</h2>
+<div class="segmented" id="ss" role="group" aria-label="屏保">
+  <button data-mode="aerial">航拍</button>
+  <button data-mode="photos">照片</button>
+  <button data-mode="clock">时钟</button>
+</div>
+<p class="hint" id="ssHint"></p>
+
+<h2>焦点样式</h2>
+<div class="segmented two" id="focus" role="group" aria-label="焦点样式">
+  <button data-style="high_contrast">高对比度</button>
+  <button data-style="standard">标准</button>
+</div>
+<p class="hint" id="focusHint"></p>
+
+<h2>天气</h2>
+<div class="group wx"><b id="wxNow">—</b><span id="wxPlace"></span></div>
+<form class="city" id="cityForm">
+  <input id="city" type="text" placeholder="输入城市，例如 杭州" enterkeyhint="done" autocomplete="off">
+  <button id="cityBtn">设置</button>
+</form>
+<p class="hint" id="wxHint"></p>
+
+<h2>从手机添加</h2>
+<label class="upload" id="uploadBtn">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M6 10l6-6 6 6M4 20h16"/></svg>
+  <span id="uploadLabel">选择照片，设为电视壁纸</span>
+  <input id="file" type="file" accept="image/*" multiple hidden>
+</label>
+
+<div id="sections"></div>
+
+<h2>App 图标</h2>
+<p class="hint" style="margin-top:0;margin-bottom:12px">点一个 App，从手机选一张图片换掉它在电视上的图标。图片会裁成 16:9；横图效果最好。</p>
+<div class="grid" id="apps"></div>
+<input id="iconFile" type="file" accept="image/*" hidden>
+<div class="toast" id="toast"></div>
+
+<script>
+const base = location.pathname.replace(/\/?$/, '/');
+const $ = s => document.querySelector(s);
+let state = null;
+
+const hints = {
+  aerial: '播放 Apple TV 航拍影片，画面会标出所在的地点。',
+  photos: '轮播每日精选和你的照片。',
+  clock: '大号时钟，配合当前壁纸。'
+};
+const groups = [
+  ['daily', '每日精选', '每天自动更新的风景摄影'],
+  ['photo', '我的照片', ''],
+  ['builtin', '内置', ''],
+  ['auto', '更多', '']
+];
+
+function toast(msg) {
+  const t = $('#toast'); t.textContent = msg; t.classList.add('on');
+  clearTimeout(toast.timer); toast.timer = setTimeout(() => t.classList.remove('on'), 1800);
+}
+
+async function api(path, body) {
+  const opts = body ? { method: 'POST', body: new URLSearchParams(body) } : {};
+  const r = await fetch(base + path, opts);
+  if (!r.ok) throw new Error(r.status);
+  return r.json();
+}
+
+function card(w, selected, extraClass) {
+  const b = document.createElement('button');
+  b.className = 'wp ' + (extraClass || '');
+  b.setAttribute('aria-selected', selected ? 'true' : 'false');
+  b.innerHTML = `<img loading="lazy" alt="" src="${base}thumb/${encodeURIComponent(w.id)}">
+    <span class="check"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+    <div class="t"></div><div class="c"></div>`;
+  b.querySelector('.t').textContent = w.title;
+  b.querySelector('.c').textContent = w.caption || '';
+  b.onclick = async () => {
+    state = await api('api/wallpaper', { id: w.id }); render(); toast('已设为电视壁纸');
+  };
+  if (w.kind === 'photo') {
+    const d = document.createElement('button');
+    d.className = 'del'; d.textContent = '✕'; d.setAttribute('aria-label', '删除');
+    d.onclick = async e => {
+      e.stopPropagation();
+      if (!confirm('删除这张照片？')) return;
+      state = await api('api/delete', { id: w.id }); render();
+    };
+    b.appendChild(d);
+  }
+  return b;
+}
+
+const weatherNames = { clear: '晴', partlycloudy: '多云', cloudy: '阴', fog: '雾', rain: '雨', snow: '雪', thunder: '雷雨' };
+
+function renderWeather() {
+  const w = state.weather || {};
+  $('#wxNow').textContent = w.celsius !== undefined ? `${w.celsius}° ${weatherNames[w.kind] || ''}` : '—';
+  $('#wxPlace').textContent = w.place || '';
+  const hint = $('#wxHint'); hint.innerHTML = '';
+  if (w.chosen) {
+    hint.append(`显示 ${w.place} 的天气。`);
+    const b = document.createElement('button'); b.className = 'link'; b.textContent = '改回按网络自动定位';
+    b.onclick = async () => { state = await api('api/weather/auto', {}); render(); toast('已改回自动定位'); };
+    hint.append(b);
+  } else {
+    hint.textContent = w.place
+      ? `按网络自动定位：${w.place}。用了代理时常会定错，不对的话输入你所在的城市。`
+      : '还没有定位到。输入你所在的城市。';
+  }
+}
+
+let iconFor = null;
+function renderApps() {
+  const g = $('#apps'); g.innerHTML = '';
+  for (const a of state.apps || []) {
+    const b = document.createElement('button');
+    b.className = 'wp';
+    b.innerHTML = `<img loading="lazy" alt=""><div class="t"></div><div class="c"></div>`;
+    b.querySelector('img').src = `${base}tile/${encodeURIComponent(a.key)}?v=${a.stamp}`;
+    b.querySelector('.t').textContent = a.label;
+    b.querySelector('.c').textContent = a.custom ? '自定义图标' : '';
+    b.onclick = () => { iconFor = a; $('#iconFile').click(); };
+    if (a.custom) {
+      const r = document.createElement('button');
+      r.className = 'del'; r.textContent = '↺'; r.setAttribute('aria-label', '恢复默认图标');
+      r.onclick = async e => {
+        e.stopPropagation();
+        if (!confirm(`恢复「${a.label}」的默认图标？`)) return;
+        state = await api('api/icon/reset', { app: a.key }); render(); toast('已恢复默认图标');
+      };
+      b.appendChild(r);
+    }
+    g.appendChild(b);
+  }
+}
+
+function render() {
+  renderWeather();
+  renderApps();
+  document.querySelectorAll('#ss button').forEach(b =>
+    b.setAttribute('aria-pressed', b.dataset.mode === state.screensaver ? 'true' : 'false'));
+  $('#ssHint').textContent = hints[state.screensaver] || '';
+  document.querySelectorAll('#focus button').forEach(b =>
+    b.setAttribute('aria-pressed', b.dataset.style === state.focusStyle ? 'true' : 'false'));
+  $('#focusHint').textContent = state.focusStyle === 'standard'
+    ? '与 Apple TV 默认一致：选中的 App 只放大浮起。'
+    : '选中的 App 外面加一圈白色描边，离得远也看得清。';
+  const root = $('#sections'); root.innerHTML = '';
+  for (const [kind, title, sub] of groups) {
+    let list = state.wallpapers.filter(w => w.kind === kind);
+    if (kind === 'daily' && list.length) {
+      list = [{ id: state.latestDaily, kind: 'daily', title: '每日自动更新', caption: '总是使用当天的照片' }, ...list];
+    }
+    if (!list.length && kind !== 'photo') continue;
+    const h = document.createElement('h2'); h.textContent = title; root.appendChild(h);
+    if (!list.length) {
+      const p = document.createElement('p'); p.className = 'empty'; p.textContent = '还没有照片。用上面的按钮从手机添加。'; root.appendChild(p);
+      continue;
+    }
+    const g = document.createElement('div'); g.className = 'grid';
+    list.forEach(w => g.appendChild(card(w, w.id === state.selected)));
+    root.appendChild(g);
+  }
+}
+
+document.querySelectorAll('#ss button').forEach(b => b.onclick = async () => {
+  state = await api('api/screensaver', { mode: b.dataset.mode }); render();
+});
+document.querySelectorAll('#focus button').forEach(b => b.onclick = async () => {
+  state = await api('api/focus', { style: b.dataset.style }); render(); toast('电视上已更新');
+});
+
+$('#file').onchange = async e => {
+  const files = [...e.target.files]; if (!files.length) return;
+  const btn = $('#uploadBtn'); const label = $('#uploadLabel');
+  btn.setAttribute('disabled', ''); label.textContent = `正在发送 ${files.length} 张…`;
+  try {
+    const fd = new FormData(); files.forEach((f, i) => fd.append('photo' + i, f, f.name));
+    const r = await fetch(base + 'api/upload', { method: 'POST', body: fd });
+    state = await r.json(); render();
+    toast(state.added ? `已添加 ${state.added} 张，最后一张已设为壁纸` : '没有可用的照片');
+  } catch (err) { toast('发送失败，请重试'); }
+  btn.removeAttribute('disabled'); label.textContent = '选择照片，设为电视壁纸'; e.target.value = '';
+};
+
+$('#cityForm').onsubmit = async e => {
+  e.preventDefault();
+  const name = $('#city').value.trim(); if (!name) return;
+  const btn = $('#cityBtn'); btn.setAttribute('disabled', '');
+  try {
+    state = await api('api/weather/city', { name }); render();
+    toast(state.found ? `已设为 ${state.weather.place}` : `没有找到「${name}」`);
+    if (state.found) $('#city').value = '';
+  } catch (err) { toast('设置失败，请重试'); }
+  btn.removeAttribute('disabled');
+};
+
+$('#iconFile').onchange = async e => {
+  const f = e.target.files[0]; const a = iconFor; e.target.value = '';
+  if (!f || !a) return;
+  toast(`正在发送「${a.label}」的图标…`);
+  try {
+    const fd = new FormData(); fd.append('app', a.key); fd.append('picture', f, f.name);
+    const r = await fetch(base + 'api/icon', { method: 'POST', body: fd });
+    if (!r.ok) throw new Error(r.status);
+    state = await r.json(); render();
+    toast(state.saved ? '电视上已更换' : '这张图片用不了');
+  } catch (err) { toast('发送失败，请重试'); }
+};
+
+async function refresh() { try { state = await api('api/state'); render(); } catch (e) {} }
+refresh();
+setInterval(() => { if (!document.hidden) refresh(); }, 6000);
+</script>
+</body>
+</html>

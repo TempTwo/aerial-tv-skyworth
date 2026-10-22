@@ -1,0 +1,110 @@
+# Aerial 电视桌面 · 创维 8H52_G3 二次修改版
+
+> 本仓库是 [pengchujin/aerial-tv](https://github.com/pengchujin/aerial-tv) 的**二次修改版**，
+> 原作者为 **pengchujin**，本仓库保留其 MIT 许可证与全部版权声明（见 [LICENSE](LICENSE)）。
+>
+> 二次修改由 **TempTwo** 完成，仅为让 Aerial 在**创维 8H52_G3** 这台老电视上真正好用。
+
+---
+
+## 这是什么
+
+[Aerial](https://github.com/pengchujin/aerial-tv) 是一款参照 tvOS 设计的 Android TV 桌面：
+没有广告、没有推荐流，只有你的 App、你的壁纸和航拍屏保。
+
+原版 Aerial 面向较新的国产电视（小米、TCL 等）。本仓库把它适配到了
+**创维 8H52_G3（Hi3751V551 / Android 5.1.1 / API 22 / 2016 年机器）**，
+并修复了原版在老设备上的若干问题。
+
+## 下载
+
+Releases 页提供可直接安装的 APK：
+
+| 版本 | 说明 |
+| --- | --- |
+| `aerial-skyworth-8h52-v1.18.apk` | 本仓库的修改版，**已在创维 8H52_G3 实测** |
+
+- 包名 `app.orchard.tv`，版本 `1.18`（versionCode 20）
+- `minSdk 21` / `targetSdk 34`，原生 ABI：arm64-v8a、armeabi-v7a、x86、x86_64
+- 与上游同为**同一个签名 key**（上游 `local/` 目录里的 key），因此可以用 `adb install -r` 覆盖升级
+
+## 相对上游改了什么
+
+### 1. 适配 Android 5.1（API 22）
+
+上游 Aerial 默认面向 Android 6.0+。在 API 22 的老设备上会直接崩溃或无法安装，改动包括：
+
+| 项 | 上游 | 本仓库 |
+| --- | --- | --- |
+| `minSdk` | 23 | **21**（覆盖到 Android 5.0） |
+| Compose BOM | 2025.x | **降级到支持 API 21 的版本**（Compose 1.10 把 minSdk 提到了 23） |
+| Media3 | 1.9+ | **1.8.0**（1.9 起要求 API 23） |
+| 其他 | — | 关闭脱糖（desugaring），因为老设备不需要 |
+
+### 2. 个性化面板：二维码缩小、壁纸完整显示
+
+原版个性化面板里，二维码卡片（176dp）和壁纸缩略图（168dp）尺寸过大，
+在 1080p 的小屏上**二维码与左侧内容重叠**、壁纸被裁掉。
+
+- 二维码卡片：`176dp → 124dp`，容器 `220dp → 156dp`
+- 壁纸缩略图：`168dp → 160dp`，间距 `28dp → 20dp`
+- 给壁纸容器加 `clipToBounds`，四张壁纸完整显示
+- 缩小后二维码仍可被 OpenCV 正常解码（内容为 `http://<电视IP>:8790/<token>/`）
+
+### 3. 右键菜单「应用信息」改为自绘面板
+
+原版的「应用信息」调用 `ACTION_APPLICATION_DETAILS_SETTINGS`，
+但这台电视**没有 AOSP 的 Settings 应用**，点击无反应。
+
+新增 `ui/home/AppInfoSheet.kt`，自绘一个应用信息面板，直接显示：
+应用名、版本号、安装大小、安装时间，并提供「启动」「卸载」「关闭」操作。
+
+### 4. 其他
+
+- 适配 `armeabi-v7a`（本机 `ro.product.cpu.abilist` 只有 32 位）
+- 修正硬解音频解码器选择（`OMX.hisi.audio.decoder.mp3`）
+
+## 实测环境
+
+| 项 | 值 |
+| --- | --- |
+| 电视 | 创维 8H52_G3 |
+| SoC | Hi3751V551（bigfish） |
+| Android | 5.1.1（API 22） |
+| 分辨率 | 1920×1080 |
+| 内存 | 1.5 GB |
+
+已实测通过：首页、歌单、搜索、逐行歌词、全屏播放器、硬解 MP3 播放，
+右键菜单应用信息面板正常显示，常驻内存约 190 MB。
+
+## 自己编译
+
+```bash
+git clone https://github.com/TempTwo/aerial-tv-skyworth.git
+cd aerial-tv-skyworth
+./gradlew :app:assembleStandardRelease
+# 产物: app/build/outputs/apk/standard/release/app-standard-release.apk
+```
+
+> ⚠️ 与上游一样，**签名 key 不在版本控制里**（见 `docs/HANDOFF.md`）。
+> 若要生成可覆盖升级的 APK，需要自备签名 key 并配置到 `local/`。
+
+## 安装
+
+```bash
+adb install -r aerial-skyworth-8h52-v1.18.apk
+```
+
+装完把电视的默认桌面指向 Aerial：
+
+```xml
+<!-- /system/pcfg/8H52_G3/config/general_config.xml -->
+<config name="DEFAULT_HOMEPAGE" value="app.orchard.tv/app.orchard.tv.MainActivity" />
+```
+
+## 许可证与致谢
+
+- 代码基于 [pengchujin/aerial-tv](https://github.com/pengchujin/aerial-tv)，MIT 许可证
+- 原作者：**pengchujin** — 感谢写出这么棒的电视桌面
+- 字体 `FONT-LICENSE-OFL.txt` 同样来自上游
+- 本仓库的适配与修复改动由 TempTwo 完成

@@ -1,0 +1,18 @@
+.gradle/
+build/
+local.properties
+.idea/
+*.iml
+.kotlin/
+
+# Machine- and household-specific: TV addresses, signing key. Hand over privately.
+local/
+.DS_Store
+
+# Copied into the website by tools/deploy-site.sh: the latest release's APKs and the install scripts.
+site/download/
+site/tools/
+site/install.sh
+
+# Wrangler state and the account cache (account id, e-mail).
+.wrangler/
