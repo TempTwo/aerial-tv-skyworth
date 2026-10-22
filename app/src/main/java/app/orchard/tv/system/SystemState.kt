@@ -11,8 +11,10 @@ import android.media.tv.TvInputManager
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
+import android.net.Uri
 import android.net.wifi.WifiManager
 import android.os.Build
+import android.os.Bundle
 import android.provider.Settings
 import androidx.core.content.getSystemService
 import app.orchard.tv.R
@@ -205,7 +207,8 @@ object SystemProbe {
      * Physical inputs from the TV input framework, routed through the maker's own player where the
      * generic passthrough intent has no handler (Xiaomi's China firmware).
      */
-    fun sources(context: Context): List<TvSource> = frameworkSources(context).ifEmpty { tclSources(context) }
+    fun sources(context: Context): List<TvSource> =
+        frameworkSources(context).ifEmpty { skyworthSources(context) }.ifEmpty { tclSources(context) }
 
     private fun frameworkSources(context: Context): List<TvSource> {
         val tim = context.getSystemService<TvInputManager>() ?: return emptyList()
@@ -243,6 +246,90 @@ object SystemProbe {
                 )
             }
             .sortedWith(compareBy({ it.kind.ordinal }, { it.label }))
+    }
+
+    /**
+     * Skyworth / Coocaa keeps its inputs the same way TCL does: the TV Input Framework service is
+     * not in the firmware at all (`tv_input` is missing from `service list` on the 8H52_G3), so
+     * [frameworkSources] finds nothing. The maker's own TV SDK does list them though, and ships in
+     * every SkyTV build as an exported provider with no permission on it, so any app can read it:
+     *
+     *     content://com.skyworth.tv.sdk.provider/system/source_list
+     *     (columns sourceName, sourceIndex, displayName, signalState, sourceId)
+     *
+     * Switching goes through the same provider's `call()`, which runs the TV's own source switcher,
+     * so the panel, resolution handshake and the "no signal" screen are the ones the remote would
+     * have produced. Verified on the Skyworth 8H52_G3 (Android 5.1).
+     */
+    private const val SKYWORTH_SDK = "com.skyworth.tv.sdk.provider"
+
+    /**
+     * There is nothing to launch: the TV does the switching. Aerial intercepts this action in
+     * [app.orchard.tv.MainActivity] and calls the provider, which also keeps Home in front until
+     * the TV has changed over.
+     */
+    const val ACTION_SWITCH_SKYWORTH_SOURCE = "app.orchard.tv.SWITCH_SKYWORTH_SOURCE"
+    const val EXTRA_SKYWORTH_NAME = "app.orchard.tv.sk.name"
+    const val EXTRA_SKYWORTH_INDEX = "app.orchard.tv.sk.index"
+
+    private val SKYWORTH_COLUMNS = arrayOf("sourceName", "sourceIndex", "displayName", "signalState", "sourceId")
+
+    /** Reads the maker's own source list. Returns empty when the SDK is absent (non-Skyworth TVs). */
+    private fun skyworthSources(context: Context): List<TvSource> {
+        if (!isInstalled(context, "com.tianci.tv") && !isInstalled(context, "com.skyworth.tv")) return emptyList()
+        val uri = Uri.parse("content://$SKYWORTH_SDK/system/source_list")
+        val cursor = runCatching { context.contentResolver.query(uri, SKYWORTH_COLUMNS, null, null, null) }
+            .getOrNull() ?: return emptyList()
+        return cursor.use { c ->
+            if (!c.moveToFirst()) return@use emptyList()
+            val name = c.getColumnIndex("sourceName").takeIf { it >= 0 } ?: return@use emptyList()
+            val index = c.getColumnIndex("sourceIndex")
+            val label = c.getColumnIndex("displayName")
+            val signal = c.getColumnIndex("signalState")
+            val id = c.getColumnIndex("sourceId")
+            buildList {
+                do {
+                    val kind = when (c.getString(name)?.uppercase()) {
+                        "HDMI" -> SourceKind.Hdmi
+                        "DP", "USBTYPEC" -> SourceKind.DisplayPort
+                        "AV", "AV1", "AV2", "YPBPR", "VGA" -> SourceKind.Av
+                        "ATV", "DTMB", "DVBC", "DVBS", "DVBT" -> SourceKind.Tuner
+                        else -> SourceKind.Other
+                    }
+                    val sourceId = c.getString(id) ?: continue
+                    // signalState is 0 while the input is playing (the SDK's own translation of
+                    // SOURCE_SIGNAL_STATE.PLAY); anything else is "no signal".
+                    val playing = signal >= 0 && c.getInt(signal) == 0
+                    add(
+                        TvSource(
+                            id = sourceId,
+                            label = c.getString(label)?.takeIf { it.isNotBlank() } ?: c.getString(name) ?: sourceId,
+                            kind = kind,
+                            connected = playing,
+                            deviceName = null,
+                            intent = Intent(ACTION_SWITCH_SKYWORTH_SOURCE)
+                                .setPackage(context.packageName)
+                                .putExtra(EXTRA_SKYWORTH_NAME, c.getString(name))
+                                .putExtra(EXTRA_SKYWORTH_INDEX, if (index >= 0) c.getInt(index) else -1)
+                                .putExtra("sourceId", sourceId),
+                        ),
+                    )
+                } while (c.moveToNext())
+            }
+        }
+    }
+
+    /** Asks the maker's SDK to move to [source]; the TV reports back whether it started. */
+    fun switchSkyworthSource(context: Context, sourceId: String, name: String?, index: Int): Boolean {
+        val uri = Uri.parse("content://$SKYWORTH_SDK/method")
+        val extras = Bundle().apply {
+            putString("sourceId", sourceId)
+            name?.let { putString("name", it) }
+            putInt("index", index)
+        }
+        val ret = runCatching { context.contentResolver.call(uri, "METHOD_SWITCH_SOURCE", null, extras) }
+            .getOrNull()
+        return ret?.getBoolean("ret") ?: false
     }
 
     private const val TCL_PLAYER = "com.tcl.tv"

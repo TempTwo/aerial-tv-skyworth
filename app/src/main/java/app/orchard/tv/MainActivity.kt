@@ -47,11 +47,12 @@ import app.orchard.tv.ui.theme.canvasDensity
 import app.orchard.tv.settings.AerialSettings
 import app.orchard.tv.wallpaper.Wallpapers
 import app.orchard.tv.system.SystemProbe
-import app.orchard.tv.update.Updates
 import app.orchard.tv.weather.Weather
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 
 class MainActivity : ComponentActivity() {
@@ -82,7 +83,6 @@ class MainActivity : ComponentActivity() {
         TileArtFactory.useCanvasDensity(canvasDensity(resources.displayMetrics))
         Wallpapers.init(this)
         Weather.init(this)
-        Updates.init(this)
         CustomIcons.init(this)
         AerialSettings.init(this)
         val reducedMotion = Settings.Global.getFloat(contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
@@ -315,7 +315,6 @@ class MainActivity : ComponentActivity() {
         Wallpapers.refreshDailyIfStale()
         Wallpapers.rotateIfDue()
         Weather.refreshIfStale()
-        Updates.checkIfStale()
     }
 
     override fun onResume() {
@@ -367,6 +366,21 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun open(intent: Intent) {
+        // Skyworth's SDK switches inputs through its provider; there is no activity to launch.
+        if (intent.action == SystemProbe.ACTION_SWITCH_SKYWORTH_SOURCE) {
+            lifecycleScope.launch(Dispatchers.Main) {
+                val ok = withContext(Dispatchers.IO) {
+                    SystemProbe.switchSkyworthSource(
+                        this@MainActivity,
+                        intent.getStringExtra("sourceId") ?: return@withContext false,
+                        intent.getStringExtra(SystemProbe.EXTRA_SKYWORTH_NAME),
+                        intent.getIntExtra(SystemProbe.EXTRA_SKYWORTH_INDEX, -1),
+                    )
+                }
+                if (!ok) Toast.makeText(this@MainActivity, R.string.unavailable, Toast.LENGTH_SHORT).show()
+            }
+            return
+        }
         try {
             startActivity(intent)
         } catch (e: Exception) {

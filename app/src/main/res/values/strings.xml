@@ -97,12 +97,6 @@
     <string name="cc_inputs_boot_hint">Switch to this input when the TV is turned on or wakes from standby. Home still comes back to Aerial.</string>
     <string name="cc_inputs_pin_hint">Pinned inputs appear as tiles at the front of Home; select one to switch straight to it. Long-press a tile to move or remove it.</string>
     <string name="menu_unpin_source">Remove from Home</string>
-    <string name="cc_update_available">New Version: %s</string>
-    <string name="cc_update_title">Aerial %s</string>
-    <string name="cc_update_current">This TV has Aerial %s.</string>
-    <string name="cc_update_command">To update, run the install command again on a computer on the same network:</string>
-    <string name="cc_update_agent">Or ask an AI agent: “Update Aerial on the TV at %s, following aerial.qust.me/agent.md.”</string>
-    <string name="cc_update_keeps">Your apps, layout, wallpaper and settings stay as they are.</string>
     <string name="st_pin">Parental PIN</string>
     <string name="st_pin_off">Off</string>
     <string name="st_pin_on">On</string>

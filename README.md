@@ -22,9 +22,9 @@ Releases 页提供可直接安装的 APK：
 
 | 版本 | 说明 |
 | --- | --- |
-| `aerial-skyworth-8h52-v1.18.apk` | 本仓库的修改版，**已在创维 8H52_G3 实测** |
+| `aerial-skyworth-8h52-v1.19.apk` | 本仓库的修改版，**已在创维 8H52_G3 实测** |
 
-- 包名 `app.orchard.tv`，版本 `1.18`（versionCode 20）
+- 包名 `app.orchard.tv`，版本 `1.19`（versionCode 21）
 - `minSdk 21` / `targetSdk 34`，原生 ABI：arm64-v8a、armeabi-v7a、x86、x86_64
 - 与上游同为**同一个签名 key**（上游 `local/` 目录里的 key），因此可以用 `adb install -r` 覆盖升级
 
@@ -64,6 +64,31 @@ Releases 页提供可直接安装的 APK：
 - 适配 `armeabi-v7a`（本机 `ro.product.cpu.abilist` 只有 32 位）
 - 修正硬解音频解码器选择（`OMX.hisi.audio.decoder.mp3`）
 
+### 5. 信号源：改用厂商 TV SDK provider（修复列表为空）
+
+原版从 `TvInputManager` 读信号源。**这台电视的固件没有 `tv_input` 服务**
+（`TvInputManager` 无任何输出），所以设置面板里的信号源一直是空的。
+
+改为走创维自己的 TV SDK provider：
+
+| 项 | 说明 |
+| --- | --- |
+| 列表 | `content://com.skyworth.tv.sdk.provider/system/source_list` |
+| 读取的列 | `sourceName` / `sourceIndex` / `displayName` / `signalState` / `sourceId` |
+| 切源 | `call("METHOD_SWITCH_SOURCE", …)`，extras 带 `sourceId` / `sourceName` / `sourceIndex` |
+
+> ⚠️ 这个 provider 的 `query` **必须传非空 projection**，否则直接返回 `null`
+>（内部判断是 `if (columns == null \|\| columns.length <= 0) return null;`）。
+
+实测列出 6 个信号源：4K HDMI1、4K HDMI2、视频、模拟电视、有线数字、地面数字。
+`sources()` 的查找顺序为 framework → skyworth → tcl，没有厂商 provider 时自动回退。
+
+### 6. 移除新版本检测
+
+原版会去检查上游有没有新版本，并在设置面板里提示「新版本」。
+本仓库**移除了这套机制**（`Updates.kt` 及相关入口），因为本仓库的版本号
+与上游不同，检测结果没有意义，只会干扰使用。
+
 ## 实测环境
 
 | 项 | 值 |
@@ -92,7 +117,7 @@ cd aerial-tv-skyworth
 ## 安装
 
 ```bash
-adb install -r aerial-skyworth-8h52-v1.18.apk
+adb install -r aerial-skyworth-8h52-v1.19.apk
 ```
 
 装完把电视的默认桌面指向 Aerial：
