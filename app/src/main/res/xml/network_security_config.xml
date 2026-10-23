@@ -7,8 +7,10 @@
      valid until 2035-02-09). Android 5.0 and 6.0 ignore this file; there the screensaver plays these
      films over HTTP from the start (see AerialSaver), which is why cleartext stays allowed.
 
-     The weather and location services use Let's Encrypt, whose root older TVs do not trust; they
-     serve the same over HTTP, and Weather falls back to that. -->
+     QWeather answers only over HTTPS and chains to Let's Encrypt; ClockTls trusts the bundled
+     ISRG Root X1 for it on TVs older than Android 7.1, so it needs no cleartext entry.
+
+     Weather's fallback location guess (ip-api.com) and the time servers are HTTP-only. -->
 <network-security-config>
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="false">sylvan.apple.com</domain>
@@ -18,8 +20,9 @@
         </trust-anchors>
     </domain-config>
     <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="false">api.open-meteo.com</domain>
-        <domain includeSubdomains="false">geocoding-api.open-meteo.com</domain>
-        <domain includeSubdomains="false">ipinfo.io</domain>
+        <domain includeSubdomains="false">ip-api.com</domain>
+        <domain includeSubdomains="false">api.m.taobao.com</domain>
+        <domain includeSubdomains="false">www.aliyun.com</domain>
+        <domain includeSubdomains="false">www.alibaba.com</domain>
     </domain-config>
 </network-security-config>

@@ -47,6 +47,7 @@ import app.orchard.tv.ui.theme.canvasDensity
 import app.orchard.tv.settings.AerialSettings
 import app.orchard.tv.wallpaper.Wallpapers
 import app.orchard.tv.system.SystemProbe
+import app.orchard.tv.time.TimeSync
 import app.orchard.tv.weather.Weather
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.filterNotNull
@@ -68,7 +69,11 @@ class MainActivity : ComponentActivity() {
     }
 
     private val networkCallback = object : ConnectivityManager.NetworkCallback() {
-        override fun onAvailable(network: Network) = runOnUiThread { vm.refreshNetwork() }
+        override fun onAvailable(network: Network) = runOnUiThread {
+            vm.refreshNetwork()
+            // The clock only needs the network once; this is the earliest it can be asked.
+            TimeSync.onNetworkAvailable()
+        }
         override fun onLost(network: Network) = runOnUiThread { vm.refreshNetwork() }
         override fun onCapabilitiesChanged(network: Network, caps: NetworkCapabilities) = runOnUiThread { vm.refreshNetwork() }
     }
@@ -83,6 +88,7 @@ class MainActivity : ComponentActivity() {
         TileArtFactory.useCanvasDensity(canvasDensity(resources.displayMetrics))
         Wallpapers.init(this)
         Weather.init(this)
+        TimeSync.init(this)
         CustomIcons.init(this)
         AerialSettings.init(this)
         val reducedMotion = Settings.Global.getFloat(contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f

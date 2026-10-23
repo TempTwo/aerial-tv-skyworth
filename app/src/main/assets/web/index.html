@@ -77,21 +77,23 @@
   }
   .toast.on { opacity: 1; transform: translate(-50%, 0); }
   .empty { color: var(--secondary); font-size: 15px; padding: 4px; }
-  .wx { display: flex; align-items: baseline; gap: 10px; padding: 14px 16px; }
+  .wx { display: flex; align-items: baseline; gap: 10px; padding: 14px 16px; margin-bottom: 14px; }
   .wx b { font-size: 28px; font-weight: 600; letter-spacing: -.01em; }
   .wx span { color: var(--secondary); font-size: 15px; }
-  .city { display: flex; gap: 8px; margin-top: 10px; }
-  .city input {
-    flex: 1; min-width: 0; font: inherit; font-size: 16px; color: var(--label); background: var(--card);
-    border: 0; border-radius: 10px; padding: 11px 12px; box-shadow: var(--shadow); outline: none;
+  .pad { display: grid; gap: 10px; padding: 12px; }
+  .field { display: grid; gap: 4px; }
+  .field label { font-size: 13px; color: var(--secondary); }
+  .field input, .field select {
+    width: 100%; font: inherit; font-size: 16px; color: var(--label); background: var(--fill);
+    border: 0; border-radius: 10px; padding: 11px 12px; outline: none;
   }
-  .city input:focus { box-shadow: 0 0 0 2px var(--tint); }
-  .city button {
-    font: inherit; font-weight: 600; font-size: 15px; border: 0; border-radius: 10px; padding: 0 16px;
-    background: var(--tint); color: #fff; transition: transform .16s ease-out, opacity .2s ease;
+  .field input:focus, .field select:focus { box-shadow: 0 0 0 2px var(--tint); }
+  .wide {
+    font: inherit; font-weight: 600; font-size: 15px; border: 0; border-radius: 10px;
+    padding: 12px; background: var(--tint); color: #fff; transition: transform .16s ease-out, opacity .2s ease;
   }
-  .city button:active { transform: scale(.97); }
-  .city button[disabled] { opacity: .6; }
+  .wide:active { transform: scale(.98); }
+  .wide[disabled] { opacity: .6; }
   .link { appearance: none; border: 0; background: none; color: var(--tint); font: inherit; font-size: 13px; padding: 0; }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
@@ -119,11 +121,28 @@
 
 <h2>天气</h2>
 <div class="group wx"><b id="wxNow">—</b><span id="wxPlace"></span></div>
-<form class="city" id="cityForm">
-  <input id="city" type="text" placeholder="输入城市，例如 杭州" enterkeyhint="done" autocomplete="off">
-  <button id="cityBtn">设置</button>
-</form>
+
+<div class="group pad">
+  <div class="field">
+    <label for="qhost">和风天气 API Host</label>
+    <input id="qhost" type="text" placeholder="例如 abc123.qweatherapi.com" autocomplete="off" autocapitalize="off" spellcheck="false">
+  </div>
+  <div class="field">
+    <label for="qkey">API Key</label>
+    <input id="qkey" type="password" placeholder="在控制台复制；已保存时留空即可" autocomplete="off">
+  </div>
+  <button class="wide" id="qsave">连接和风天气</button>
+</div>
+<p class="hint">在 console.qweather.com 的「设置」里可以看到 API Host 和 API Key。两项只保存在这台电视上。</p>
+
+<div class="group pad">
+  <div class="field"><label for="prov">省</label><select id="prov"></select></div>
+  <div class="field"><label for="citySel">市</label><select id="citySel"></select></div>
+  <div class="field"><label for="area">区 / 县</label><select id="area"></select></div>
+  <button class="wide" id="cityApply">设为电视的天气城市</button>
+</div>
 <p class="hint" id="wxHint"></p>
+<p class="hint" style="margin-top:6px">天气数据由和风天气提供。</p>
 
 <h2>从手机添加</h2>
 <label class="upload" id="uploadBtn">
@@ -196,20 +215,89 @@ function card(w, selected, extraClass) {
 
 const weatherNames = { clear: '晴', partlycloudy: '多云', cloudy: '阴', fog: '雾', rain: '雨', snow: '雪', thunder: '雷雨' };
 
+let places = null;
+
+async function ensurePlaces() {
+  if (places) return places;
+  const r = await fetch(base + 'api/weather/places');
+  if (!r.ok) throw new Error(r.status);
+  places = await r.json();
+  const prov = $('#prov');
+  prov.innerHTML = '';
+  places.forEach((p, i) => prov.add(new Option(p.p, i)));
+  prov.onchange = fillCities;
+  fillCities();
+  return places;
+}
+
+function fillCities() {
+  if (!places) return;
+  const city = $('#citySel');
+  city.innerHTML = '';
+  places[+$('#prov').value].c.forEach((c, i) => city.add(new Option(c.c, i)));
+  city.onchange = fillAreas;
+  fillAreas();
+}
+
+function fillAreas() {
+  if (!places) return;
+  const area = $('#area');
+  area.innerHTML = '';
+  places[+$('#prov').value].c[+$('#citySel').value].l.forEach((a, i) => area.add(new Option(a[0], i)));
+}
+
+function selectedPlace() {
+  const city = places[+$('#prov').value].c[+$('#citySel').value];
+  const area = city.l[+$('#area').value];
+  // The city seat is listed as "九江" under "九江市"; show the fuller name.
+  return { name: city.c.startsWith(area[0]) ? city.c : area[0], lat: area[1], lon: area[2] };
+}
+
+function preselect(name) {
+  if (!places || !name) return;
+  for (let pi = 0; pi < places.length; pi++) {
+    for (let ci = 0; ci < places[pi].c.length; ci++) {
+      const city = places[pi].c[ci];
+      if (city.c === name) {
+        $('#prov').value = pi; fillCities();
+        $('#citySel').value = ci; fillAreas();
+        return;
+      }
+      for (let ai = 0; ai < city.l.length; ai++) {
+        const area = city.l[ai];
+        if (area[0] === name) {
+          $('#prov').value = pi; fillCities();
+          $('#citySel').value = ci; fillAreas();
+          $('#area').value = ai;
+          return;
+        }
+      }
+    }
+  }
+}
+
 function renderWeather() {
   const w = state.weather || {};
-  $('#wxNow').textContent = w.celsius !== undefined ? `${w.celsius}° ${weatherNames[w.kind] || ''}` : '—';
-  $('#wxPlace').textContent = w.place || '';
+  const has = w.configured && w.celsius !== undefined;
+  $('#wxNow').textContent = has ? `${w.celsius}° ${weatherNames[w.kind] || ''}` : '-- --';
+  $('#wxPlace').textContent = has ? (w.place || '') : '';
+  if (w.host && document.activeElement !== $('#qhost')) $('#qhost').value = w.host;
+
   const hint = $('#wxHint'); hint.innerHTML = '';
+  if (!w.configured) {
+    hint.textContent = '还没有连接和风天气：先填上面的 API Host 和 API Key。';
+    return;
+  }
+  const parts = [];
+  if (w.error) parts.push(`上次获取失败：${w.error}`);
+  if (w.chosen) parts.push(`显示 ${w.place} 的天气`);
+  else if (w.place) parts.push(`按网络自动定位：${w.place}`);
+  else parts.push('还没有定位到城市，从下面选一个');
+  hint.textContent = parts.join('。') + '。';
   if (w.chosen) {
-    hint.append(`显示 ${w.place} 的天气。`);
     const b = document.createElement('button'); b.className = 'link'; b.textContent = '改回按网络自动定位';
     b.onclick = async () => { state = await api('api/weather/auto', {}); render(); toast('已改回自动定位'); };
-    hint.append(b);
-  } else {
-    hint.textContent = w.place
-      ? `按网络自动定位：${w.place}。用了代理时常会定错，不对的话输入你所在的城市。`
-      : '还没有定位到。输入你所在的城市。';
+    hint.append(' '); hint.append(b);
   }
 }
 
@@ -287,14 +375,28 @@ $('#file').onchange = async e => {
   btn.removeAttribute('disabled'); label.textContent = '选择照片，设为电视壁纸'; e.target.value = '';
 };
 
-$('#cityForm').onsubmit = async e => {
-  e.preventDefault();
-  const name = $('#city').value.trim(); if (!name) return;
-  const btn = $('#cityBtn'); btn.setAttribute('disabled', '');
+$('#qsave').onclick = async () => {
+  const host = $('#qhost').value.trim();
+  const key = $('#qkey').value.trim();
+  if (!host) { toast('请填写 API Host'); return; }
+  const btn = $('#qsave'); btn.setAttribute('disabled', '');
   try {
-    state = await api('api/weather/city', { name }); render();
-    toast(state.found ? `已设为 ${state.weather.place}` : `没有找到「${name}」`);
-    if (state.found) $('#city').value = '';
+    state = await api('api/weather/account', { host, key });
+    render();
+    toast(state.saved ? '已连接，天气已更新' : (state.error || '连接失败'));
+    if (state.saved) $('#qkey').value = '';
+  } catch (err) { toast('连接失败，请重试'); }
+  btn.removeAttribute('disabled');
+};
+
+$('#cityApply').onclick = async () => {
+  if (!places) return;
+  const p = selectedPlace();
+  const btn = $('#cityApply'); btn.setAttribute('disabled', '');
+  try {
+    state = await api('api/weather/city', { name: p.name, lat: p.lat, lon: p.lon });
+    render();
+    toast(state.found ? `已设为 ${state.weather.place}` : (state.error || '设置失败'));
   } catch (err) { toast('设置失败，请重试'); }
   btn.removeAttribute('disabled');
 };
@@ -313,7 +415,14 @@ $('#iconFile').onchange = async e => {
 };
 
 async function refresh() { try { state = await api('api/state'); render(); } catch (e) {} }
-refresh();
+
+(async () => {
+  await refresh();
+  try {
+    await ensurePlaces();
+    preselect((state.weather || {}).place);
+  } catch (e) {}
+})();
 setInterval(() => { if (!document.hidden) refresh(); }, 6000);
 </script>
 </body>

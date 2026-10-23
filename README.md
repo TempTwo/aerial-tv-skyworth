@@ -22,9 +22,10 @@ Releases 页提供可直接安装的 APK：
 
 | 版本 | 说明 |
 | --- | --- |
-| `aerial-skyworth-8h52-v1.19.apk` | 本仓库的修改版，**已在创维 8H52_G3 实测** |
+| `aerial-skyworth-8h52-v1.20.apk` | 最新版：和风天气、联网校时、创维背光控制，**已在创维 8H52_G3 实测** |
+| `aerial-skyworth-8h52-v1.19.apk` | 上一版：移除新版本检测、信号源改用厂商 provider |
 
-- 包名 `app.orchard.tv`，版本 `1.19`（versionCode 21）
+- 包名 `app.orchard.tv`，版本 `1.20`（versionCode 22）
 - `minSdk 21` / `targetSdk 34`，原生 ABI：arm64-v8a、armeabi-v7a、x86、x86_64
 - 与上游同为**同一个签名 key**（上游 `local/` 目录里的 key），因此可以用 `adb install -r` 覆盖升级
 
@@ -89,6 +90,42 @@ Releases 页提供可直接安装的 APK：
 本仓库**移除了这套机制**（`Updates.kt` 及相关入口），因为本仓库的版本号
 与上游不同，检测结果没有意义，只会干扰使用。
 
+### 7. 和风天气（Key 不写进代码）
+
+原版天气依赖上游的接口，在这台电视上不可用。1.20 改为和风天气 v1：
+
+- API Host 和 Key 在**手机设置页**填写，存在电视的 SharedPreferences 里，
+  代码和仓库中**不保存任何 Key**
+- 内置省、市、区县列表（34 省 / 392 市 / 3577 区县），手机页可直接选择
+- **没填 Host/Key 时，桌面和手机页一律显示 `-- --`**，不会显示假数据或报错
+- 天气数据按 10 分钟缓存，请求失败保留上一次结果
+
+### 8. 联网校时
+
+电视的 RTC 不走时，开机后系统时间会停在 2017 年，TLS 证书会因「尚未生效」校验失败。
+
+- 启动时请求阿里源 HTTP `Date` 头，计算与本机时钟的偏移
+- 桌面时间直接显示校正后的时间，不依赖系统时间
+- `ClockTls` 在校正生效时按校正时间校验证书，并内置 ISRG Root X1，
+  保证系统时间错误时 HTTPS 仍然可用
+
+### 9. 创维背光控制（亮度键真正生效）
+
+这台电视没有 `lights.*.so`，`Settings.System.SCREEN_BRIGHTNESS` 写进去没有任何效果。
+实际上背光由创维 `com.tianci.provider` 的 `SKY_CFG_TV_MANUAL_BACKLIGHT_ADJUST` 控制：
+
+- 通过 `ContentResolver.call("content://com.tianci.provider", …)` 读写
+- `SET_CONFIG` 需要 Bundle 里带 `TCSetData` / `TCRangeSetData`，APK 内内置了
+  这两个类的序列化镜像（固定 `serialVersionUID`），并在 R8 规则里保留
+- 读取后按 `min/max` 映射到 0..1，步长为 `span/20`
+- 写入后回读校验；值没变就返回失败，控制中心退回「打开图像设置」，
+  避免控件显示成功但电视没反应
+
+### 10. 农历与节日
+
+桌面时间下方显示农历、干支、节日；数据在 `time/Lunar.kt`、`time/Festivals.kt`，
+不依赖网络。
+
 ## 实测环境
 
 | 项 | 值 |
@@ -117,7 +154,7 @@ cd aerial-tv-skyworth
 ## 安装
 
 ```bash
-adb install -r aerial-skyworth-8h52-v1.19.apk
+adb install -r aerial-skyworth-8h52-v1.20.apk
 ```
 
 装完把电视的默认桌面指向 Aerial：

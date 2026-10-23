@@ -108,4 +108,110 @@
     <string name="pin_confirm">Enter It Again</string>
     <string name="pin_wrong">Wrong PIN. Try again.</string>
     <string name="pin_mismatch">The two PINs differ. Choose one again.</string>
+
+    <!-- The lunar date and festivals beside the home date. -->
+    <string name="lunar_today">Lunar %1$s %2$s/%3$s</string>
+    <string name="lunar_cycle">%1$s-%2$s</string>
+    <string name="lunar_leap">Leap %1$s</string>
+    <string-array name="lunar_stems">
+        <item>Jia</item>
+        <item>Yi</item>
+        <item>Bing</item>
+        <item>Ding</item>
+        <item>Wu</item>
+        <item>Ji</item>
+        <item>Geng</item>
+        <item>Xin</item>
+        <item>Ren</item>
+        <item>Gui</item>
+    </string-array>
+    <string-array name="lunar_branches">
+        <item>Zi</item>
+        <item>Chou</item>
+        <item>Yin</item>
+        <item>Mao</item>
+        <item>Chen</item>
+        <item>Si</item>
+        <item>Wu</item>
+        <item>Wei</item>
+        <item>Shen</item>
+        <item>You</item>
+        <item>Xu</item>
+        <item>Hai</item>
+    </string-array>
+    <string-array name="lunar_months">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
+        <item>8</item>
+        <item>9</item>
+        <item>10</item>
+        <item>11</item>
+        <item>12</item>
+    </string-array>
+    <string-array name="lunar_days">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
+        <item>8</item>
+        <item>9</item>
+        <item>10</item>
+        <item>11</item>
+        <item>12</item>
+        <item>13</item>
+        <item>14</item>
+        <item>15</item>
+        <item>16</item>
+        <item>17</item>
+        <item>18</item>
+        <item>19</item>
+        <item>20</item>
+        <item>21</item>
+        <item>22</item>
+        <item>23</item>
+        <item>24</item>
+        <item>25</item>
+        <item>26</item>
+        <item>27</item>
+        <item>28</item>
+        <item>29</item>
+        <item>30</item>
+    </string-array>
+
+    <string name="festival_new_year">New Year\'s Day</string>
+    <string name="festival_valentines">Valentine\'s Day</string>
+    <string name="festival_womens_day">Women\'s Day</string>
+    <string name="festival_arbor_day">Arbor Day</string>
+    <string name="festival_april_fools">April Fools\' Day</string>
+    <string name="festival_labour_day">Labour Day</string>
+    <string name="festival_youth_day">Youth Day</string>
+    <string name="festival_childrens_day">Children\'s Day</string>
+    <string name="festival_party_day">Party\'s Day</string>
+    <string name="festival_army_day">Army Day</string>
+    <string name="festival_teachers_day">Teachers\' Day</string>
+    <string name="festival_national_day">National Day</string>
+    <string name="festival_halloween">Halloween</string>
+    <string name="festival_singles_day">Singles\' Day</string>
+    <string name="festival_christmas_eve">Christmas Eve</string>
+    <string name="festival_christmas">Christmas</string>
+
+    <string name="festival_spring_festival">Spring Festival</string>
+    <string name="festival_lantern">Lantern Festival</string>
+    <string name="festival_dragon_head">Dragon Head Raising Day</string>
+    <string name="festival_dragon_boat">Dragon Boat Festival</string>
+    <string name="festival_qixi">Qixi Festival</string>
+    <string name="festival_ghost">Ghost Festival</string>
+    <string name="festival_mid_autumn">Mid-Autumn Festival</string>
+    <string name="festival_double_ninth">Double Ninth Festival</string>
+    <string name="festival_laba">Laba Festival</string>
+    <string name="festival_little_new_year">Little New Year</string>
+    <string name="festival_new_years_eve">New Year\'s Eve</string>
 </resources>

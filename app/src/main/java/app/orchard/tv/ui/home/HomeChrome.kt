@@ -36,6 +36,9 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import app.orchard.tv.system.NetKind
 import app.orchard.tv.system.NetworkStatus
+import app.orchard.tv.time.Festivals
+import app.orchard.tv.time.Lunar
+import app.orchard.tv.time.TimeSync
 import app.orchard.tv.ui.components.Pressable
 import app.orchard.tv.ui.theme.Glyph
 import app.orchard.tv.ui.theme.GlyphIcon
@@ -51,12 +54,19 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.roundToInt
 
-/** The current time, ticking on the minute. */
+/**
+ * The current time, ticking on the minute, corrected for the system clock being wrong until the
+ * network time sync gets round to it (see TimeSync).
+ */
 @Composable
-fun rememberNow(): State<LocalDateTime> = produceState(LocalDateTime.now()) {
-    while (true) {
-        value = LocalDateTime.now()
-        delay(60_000L - System.currentTimeMillis() % 60_000L + 30L)
+fun rememberNow(): State<LocalDateTime> {
+    // Reading the offset makes the clock repaint as soon as the first time server answers.
+    val offset = TimeSync.offsetMs
+    return produceState(TimeSync.now(), offset) {
+        while (true) {
+            value = TimeSync.now()
+            delay(60_000L - (System.currentTimeMillis() + offset) % 60_000L + 30L)
+        }
     }
 }
 
@@ -72,9 +82,28 @@ fun timeText(now: LocalDateTime): String {
 
 @Composable
 fun dateText(now: LocalDateTime): String {
+    val context = LocalContext.current
     val locale = Locale.getDefault()
-    val pattern = remember(locale) { DateFormat.getBestDateTimePattern(locale, "MMMMdEEEE") }
-    return now.format(DateTimeFormatter.ofPattern(pattern, locale))
+    // The Chinese pattern puts the weekday flush against the date; give it room to breathe.
+    val pattern = remember(locale) {
+        val raw = DateFormat.getBestDateTimePattern(locale, "MMMMdEEEE")
+        if (raw.startsWith("E")) raw else raw.replace("EEEE", " EEEE")
+    }
+    val day = now.toLocalDate()
+    val lunar = remember(day) { Lunar.of(day) }
+    val festivals = remember(day) { Festivals.of(day, lunar).map { context.getString(it) } }
+    return listOf(now.format(DateTimeFormatter.ofPattern(pattern, locale)), festivals.joinToString(" · "))
+        .filter { it.isNotEmpty() }
+        .joinToString(" · ")
+}
+
+/** The lunar date, on its own line under the solar one. */
+@Composable
+fun lunarText(now: LocalDateTime): String {
+    val context = LocalContext.current
+    val day = now.toLocalDate()
+    val lunar = remember(day) { Lunar.of(day) }
+    return Lunar.text(context, lunar)
 }
 
 /**
@@ -135,12 +164,18 @@ private fun darkened(src: ImageBitmap, alpha: Float): ImageBitmap {
 fun ShelfClock(now: LocalDateTime, modifier: Modifier = Modifier) {
     val dim = Color.White.copy(alpha = 0.86f)
     Column(modifier) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            BasicText(dateText(now), style = Type.Title.copy(color = dim))
-            Weather.now?.let { w ->
+        BasicText(dateText(now), style = Type.Title.copy(color = dim))
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 6.dp)) {
+            BasicText(lunarText(now), style = Type.Title.copy(color = dim))
+            // Until the weather account is set up (or a reading arrives) the slot still shows a
+            // placeholder, so the date line does not jump around while it is being configured.
+            val w = if (Weather.configured) Weather.now else null
+            if (w != null) {
                 GlyphIcon(glyphFor(w), dim, 22.dp, Modifier.padding(start = 18.dp, end = 6.dp))
                 val place = Weather.place?.takeIf { it.length <= 12 }
                 BasicText(listOfNotNull(place, "${w.celsius}°").joinToString(" "), style = Type.Title.copy(color = dim))
+            } else {
+                BasicText("-- --", style = Type.Title.copy(color = dim), modifier = Modifier.padding(start = 18.dp))
             }
         }
         BasicText(timeText(now), style = Type.Clock, modifier = Modifier.padding(top = 2.dp))

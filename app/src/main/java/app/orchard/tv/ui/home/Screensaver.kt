@@ -344,7 +344,7 @@ private fun ClockSaver(apps: List<AppEntry>, now: LocalDateTime) {
                 Column(
                     Modifier.offset(
                         x = 64.dp + (w - 64.dp * 2 - 420.dp) * s.x,
-                        y = 56.dp + (h - 56.dp * 2 - 170.dp) * s.y,
+                        y = 56.dp + (h - 56.dp * 2 - 200.dp) * s.y,
                     ),
                 ) { ShelfClock(now = now) }
             }

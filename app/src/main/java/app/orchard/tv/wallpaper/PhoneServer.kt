@@ -50,6 +50,12 @@ class PhoneServer private constructor(private val context: Context, private val 
             when {
                 path == "/" -> newFixedLengthResponse(Response.Status.OK, "text/html; charset=utf-8", page())
                 path == "/api/state" -> json(state())
+                // The province/city/district list is a bundled file; the phone page reads it once.
+                path == "/api/weather/places" -> newFixedLengthResponse(
+                    Response.Status.OK,
+                    "application/json; charset=utf-8",
+                    context.assets.open("weather/cities.json").bufferedReader().use { it.readText() },
+                )
                 path.startsWith("/thumb/") -> thumb(path.removePrefix("/thumb/"))
                 session.method == Method.POST && path == "/api/wallpaper" -> {
                     val id = form(session)["id"].orEmpty()
@@ -79,10 +85,21 @@ class PhoneServer private constructor(private val context: Context, private val 
                     if (installed(pkg)) { CustomIcons.clear(pkg); onMain { CustomIcons.changed() } }
                     json(state())
                 }
+                session.method == Method.POST && path == "/api/weather/account" -> {
+                    val fields = form(session)
+                    val ok = runBlocking(Dispatchers.Main) {
+                        Weather.saveAccount(fields["host"].orEmpty(), fields["key"].orEmpty())
+                    }
+                    json(state().put("saved", ok).put("error", Weather.lastError ?: ""))
+                }
                 session.method == Method.POST && path == "/api/weather/city" -> {
-                    val name = form(session)["name"].orEmpty()
-                    val found = name.isNotBlank() && runBlocking(Dispatchers.Main) { Weather.choose(name) }
-                    json(state().put("found", found))
+                    val fields = form(session)
+                    val name = fields["name"].orEmpty()
+                    val lat = fields["lat"]?.toDoubleOrNull()
+                    val lon = fields["lon"]?.toDoubleOrNull()
+                    val found = name.isNotBlank() && lat != null && lon != null &&
+                        runBlocking(Dispatchers.Main) { Weather.choose(name, lat, lon) }
+                    json(state().put("found", found).put("error", Weather.lastError ?: ""))
                 }
                 session.method == Method.POST && path == "/api/weather/auto" -> {
                     onMain { Weather.useNetworkLocation() }
@@ -120,6 +137,9 @@ class PhoneServer private constructor(private val context: Context, private val 
             .put("weather", JSONObject().apply {
                 put("place", Weather.place ?: "")
                 put("chosen", Weather.chosen)
+                put("configured", Weather.configured)
+                put("host", Weather.apiHost())
+                put("error", Weather.lastError ?: "")
                 Weather.now?.let { put("celsius", it.celsius); put("kind", it.kind.name.lowercase()); put("day", it.day) }
             })
     }
