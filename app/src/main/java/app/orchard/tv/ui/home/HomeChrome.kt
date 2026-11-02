@@ -55,17 +55,14 @@ import java.util.Locale
 import kotlin.math.roundToInt
 
 /**
- * The current time, ticking on the minute, corrected for the system clock being wrong until the
- * network time sync gets round to it (see TimeSync).
+ * The current time, ticking on the minute, straight from the system clock (see TimeSync).
  */
 @Composable
 fun rememberNow(): State<LocalDateTime> {
-    // Reading the offset makes the clock repaint as soon as the first time server answers.
-    val offset = TimeSync.offsetMs
-    return produceState(TimeSync.now(), offset) {
+    return produceState(TimeSync.now(), 0) {
         while (true) {
             value = TimeSync.now()
-            delay(60_000L - (System.currentTimeMillis() + offset) % 60_000L + 30L)
+            delay(60_000L - System.currentTimeMillis() % 60_000L + 30L)
         }
     }
 }

@@ -85,13 +85,6 @@ class PhoneServer private constructor(private val context: Context, private val 
                     if (installed(pkg)) { CustomIcons.clear(pkg); onMain { CustomIcons.changed() } }
                     json(state())
                 }
-                session.method == Method.POST && path == "/api/weather/account" -> {
-                    val fields = form(session)
-                    val ok = runBlocking(Dispatchers.Main) {
-                        Weather.saveAccount(fields["host"].orEmpty(), fields["key"].orEmpty())
-                    }
-                    json(state().put("saved", ok).put("error", Weather.lastError ?: ""))
-                }
                 session.method == Method.POST && path == "/api/weather/city" -> {
                     val fields = form(session)
                     val name = fields["name"].orEmpty()
@@ -138,7 +131,6 @@ class PhoneServer private constructor(private val context: Context, private val 
                 put("place", Weather.place ?: "")
                 put("chosen", Weather.chosen)
                 put("configured", Weather.configured)
-                put("host", Weather.apiHost())
                 put("error", Weather.lastError ?: "")
                 Weather.now?.let { put("celsius", it.celsius); put("kind", it.kind.name.lowercase()); put("day", it.day) }
             })

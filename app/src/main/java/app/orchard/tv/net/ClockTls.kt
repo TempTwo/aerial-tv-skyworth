@@ -23,7 +23,7 @@ private const val TAG = "AerialTls"
  * Two things trip this panel's HTTPS up. Its clock can boot years behind, so a certificate issued
  * this year looks "not yet valid". And Android 5 predates ISRG Root X1, which Let's Encrypt
  * chains to. The chain is still verified — signatures, host name, and a root we trust — only the
- * dates come from the clock's network measurement instead of the RTC.
+ * dates come from the system clock (see TimeSync) instead of the RTC directly.
  */
 object ClockTls {
     private val extraRoots = mutableListOf<X509Certificate>()

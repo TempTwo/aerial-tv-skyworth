@@ -123,26 +123,13 @@
 <div class="group wx"><b id="wxNow">—</b><span id="wxPlace"></span></div>
 
 <div class="group pad">
-  <div class="field">
-    <label for="qhost">和风天气 API Host</label>
-    <input id="qhost" type="text" placeholder="例如 abc123.qweatherapi.com" autocomplete="off" autocapitalize="off" spellcheck="false">
-  </div>
-  <div class="field">
-    <label for="qkey">API Key</label>
-    <input id="qkey" type="password" placeholder="在控制台复制；已保存时留空即可" autocomplete="off">
-  </div>
-  <button class="wide" id="qsave">连接和风天气</button>
-</div>
-<p class="hint">在 console.qweather.com 的「设置」里可以看到 API Host 和 API Key。两项只保存在这台电视上。</p>
-
-<div class="group pad">
   <div class="field"><label for="prov">省</label><select id="prov"></select></div>
   <div class="field"><label for="citySel">市</label><select id="citySel"></select></div>
   <div class="field"><label for="area">区 / 县</label><select id="area"></select></div>
   <button class="wide" id="cityApply">设为电视的天气城市</button>
 </div>
 <p class="hint" id="wxHint"></p>
-<p class="hint" style="margin-top:6px">天气数据由和风天气提供。</p>
+<p class="hint" style="margin-top:6px">天气无需任何配置，联网即用；也可以在下面选一个城市。</p>
 
 <h2>从手机添加</h2>
 <label class="upload" id="uploadBtn">
@@ -281,13 +268,8 @@ function renderWeather() {
   const has = w.configured && w.celsius !== undefined;
   $('#wxNow').textContent = has ? `${w.celsius}° ${weatherNames[w.kind] || ''}` : '-- --';
   $('#wxPlace').textContent = has ? (w.place || '') : '';
-  if (w.host && document.activeElement !== $('#qhost')) $('#qhost').value = w.host;
 
   const hint = $('#wxHint'); hint.innerHTML = '';
-  if (!w.configured) {
-    hint.textContent = '还没有连接和风天气：先填上面的 API Host 和 API Key。';
-    return;
-  }
   const parts = [];
   if (w.error) parts.push(`上次获取失败：${w.error}`);
   if (w.chosen) parts.push(`显示 ${w.place} 的天气`);
@@ -373,20 +355,6 @@ $('#file').onchange = async e => {
     toast(state.added ? `已添加 ${state.added} 张，最后一张已设为壁纸` : '没有可用的照片');
   } catch (err) { toast('发送失败，请重试'); }
   btn.removeAttribute('disabled'); label.textContent = '选择照片，设为电视壁纸'; e.target.value = '';
-};
-
-$('#qsave').onclick = async () => {
-  const host = $('#qhost').value.trim();
-  const key = $('#qkey').value.trim();
-  if (!host) { toast('请填写 API Host'); return; }
-  const btn = $('#qsave'); btn.setAttribute('disabled', '');
-  try {
-    state = await api('api/weather/account', { host, key });
-    render();
-    toast(state.saved ? '已连接，天气已更新' : (state.error || '连接失败'));
-    if (state.saved) $('#qkey').value = '';
-  } catch (err) { toast('连接失败，请重试'); }
-  btn.removeAttribute('disabled');
 };
 
 $('#cityApply').onclick = async () => {
