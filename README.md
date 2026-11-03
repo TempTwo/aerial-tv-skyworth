@@ -158,12 +158,81 @@ cd aerial-tv-skyworth
 adb install -r aerial-skyworth-8h52-v1.21.apk
 ```
 
-装完把电视的默认桌面指向 Aerial：
+装完把电视的默认桌面指向 Aerial（**写 `/system` 配置需要 root**，见下一节；
+仅有 ADB 时两条 `setprop` 只是临时生效，冷启动会被打回）：
 
 ```xml
-<!-- /system/pcfg/8H52_G3/config/general_config.xml -->
+<!-- /system/pcfg/8H52_G3/config/general_config.xml 与 /data/ccos/general_config.xml，两处都要改 -->
 <config name="DEFAULT_HOMEPAGE" value="app.orchard.tv/app.orchard.tv.MainActivity" />
 ```
+
+```sh
+setprop persist.service.homepage.pkg app.orchard.tv
+setprop persist.service.homepage.cls app.orchard.tv.MainActivity
+setprop persist.service.starthomepage 1
+```
+
+## 装完被重置 / 被自动卸载？（酷开系统守护机制的应对）
+
+这是 [issues #1](https://github.com/TempTwo/aerial-tv-skyworth/issues/1)、
+[#2](https://github.com/TempTwo/aerial-tv-skyworth/issues/2) 里反馈的两类问题，
+本质都是**创维酷开（天赐）系统的自愈/守护机制**在起作用。
+仅靠 ADB（未 root）能缓解、不能根治；**根本解法都需要 root**。
+root 的免解锁做法、能力边界、变砖风险与救砖方法，见
+👉 **[TempTwo/skyworth-8h52-root](https://github.com/TempTwo/skyworth-8h52-root)**
+（⚠️ ROOT 有风险，仓库 README 置顶有完整声明；下面的一切都以先拿到 root 为前提）。
+
+### 问题一：冷启动后默认桌面被还原（issue #2）
+
+**根因不是属性失效，而是配置被重读。** `persist.service.homepage.pkg/cls`
+只是厂商 `sky_launcher` 的派生缓存——每次**冷启动**（拔电重开）都会从
+`general_config.xml` 的 `DEFAULT_HOMEPAGE` 重新生成。热重启只改属性所以"有效"，
+冷启动读的还是厂商配置，于是打回 `com.tianci.movieplatform`。
+
+**Root 后的修法（改配置文件，不是循环 setprop）**：
+
+1. **两处配置都要改**（缺一不可）：
+   * `/system/pcfg/8H52_G3/config/general_config.xml`（出厂配置源）
+   * `/data/ccos/general_config.xml`（运行时副本，`sky_launcher` 实际读它）
+2. 改完执行三条 `setprop`（上一节），立即生效，不用重启；
+3. **不需要常驻"守护脚本"循环覆盖**（DeepSeek 给的方案是在拿不到配置写权时的
+   权宜——有了 root 直接改持久文件即可；循环覆盖仍会有一瞬厂商桌面闪现）；
+4. 保险丝：把写配置做成 U 盘 payload 任务，**每次开机自动再写一遍**，
+   厂商 OTA 重刷 `/system` 后也会自愈（工具箱的 `10_set_homepage.sh` 就是这个）。
+
+实测：2026-10-21 起在这台 8H52_G3 上，配置改完后**多次拔电冷启动**，
+Aerial 每次都是开机默认桌面，无一次被打回。
+
+### 问题二：开机或打开设置后 Aerial 被自动卸载（issue #1）
+
+**根因**：酷开的多层自愈——root 守护进程 `coocaa_guard`、开机推送/自装
+（`SkyPushService` / `SkyAutoInstaller`）、疑似存在 `/system/etc/skysecurity.list`
+的白名单清剿，以及云端"快照"恢复（连恢复出厂设置都会拖回快照）。
+未 root 时这台机器 adb 拿不到写权，**基本无解**（快照连你打开 ADB 的开关都会还原）。
+
+**Root 后的操作序列**（对照工具箱的 `payload/tasks/`）：
+
+1. **先拿 root**：U 盘 boot-shell 通道（V017/V020 固件实测，不改 boot 分区、
+   不拆机；`setprop ctl.start boot-shell` 不重启电视即可触发）；
+2. **砍掉自愈的"命脉"**：
+   * `pm uninstall com.coocaa.skycast.tool` ——它内置 `EmergencyUpgradeEngine`，
+     会在后台偷偷重装酷开桌面（纯 `/data` 应用，可彻底删）；
+   * 屏蔽它拉包用的域名：`/system/etc/hosts` 加
+     `0.0.0.0 apk-sky-fs.coocaa.ottcn.com`；
+   * 冻结（或卸载）`SkyPushService` / `SkyAutoInstaller`：这些是"开机把用户
+     装的东西清回去"的执行者，`pm disable-user --user 0 <pkg>` 即可；
+3. **如果系统里有 `/system/etc/skysecurity.list`**（issue #1 提到的疑似白名单
+   清剿）：root 后直接编辑它，把 `app.orchard.tv` 加入白名单；本机该文件
+   未出现异常行为（有可能在 V020 上已失效），若你的机器遇到"装了就消失"，
+   优先排查这个文件；
+4. **配置按问题一处理**，让厂商自己的 HOME 流程把 Aerial 当成"合法默认桌面"
+   ——守护机制也就不再与你互相拉扯了。
+
+实测：2026-10-21 起本机执行完上述 1/2/4 后，Aerial 常驻至今，多次冷启动、
+打开过系统设置，**再未出现"开机被卸载"或"打开设置就消失"**。
+
+> 再次提醒：以上需要在 `/system` 写配置/删包，全部依赖 root；
+> root 有失去保修与变砖风险，动手前先看工具箱仓库的救砖章节。
 
 ## 许可证与致谢
 
