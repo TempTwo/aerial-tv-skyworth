@@ -22,10 +22,10 @@ Releases 页提供可直接安装的 APK：
 
 | 版本 | 说明 |
 | --- | --- |
-| `aerial-skyworth-8h52-v1.20.apk` | 最新版：和风天气、联网校时、创维背光控制，**已在创维 8H52_G3 实测** |
-| `aerial-skyworth-8h52-v1.19.apk` | 上一版：移除新版本检测、信号源改用厂商 provider |
+| `aerial-skyworth-8h52-v1.21.apk` | 最新版：无 Key 多源天气（移植 Quiet TV）、时钟直取系统时间，**已在创维 8H52_G3 实测** |
+| `aerial-skyworth-8h52-v1.20.apk` | 上一版：和风天气、联网校时、创维背光控制 |
 
-- 包名 `app.orchard.tv`，版本 `1.20`（versionCode 22）
+- 包名 `app.orchard.tv`，版本 `1.21`（versionCode 23）
 - `minSdk 21` / `targetSdk 34`，原生 ABI：arm64-v8a、armeabi-v7a、x86、x86_64
 - 与上游同为**同一个签名 key**（上游 `local/` 目录里的 key），因此可以用 `adb install -r` 覆盖升级
 
@@ -90,24 +90,31 @@ Releases 页提供可直接安装的 APK：
 本仓库**移除了这套机制**（`Updates.kt` 及相关入口），因为本仓库的版本号
 与上游不同，检测结果没有意义，只会干扰使用。
 
-### 7. 和风天气（Key 不写进代码）
+### 7. 天气：无 Key 多源（移植自 Quiet TV）
 
-原版天气依赖上游的接口，在这台电视上不可用。1.20 改为和风天气 v1：
+原版天气依赖上游的接口，在这台电视上不可用。1.20 曾改为和风天气 v1，但还要在手机页填
+API Host 和 Key；**1.21 从 [BeatsAD/quiet-tv](https://github.com/BeatsAD/quiet-tv) 移植了
+无 Key 的多源方案，零配置即用**：
 
-- API Host 和 Key 在**手机设置页**填写，存在电视的 SharedPreferences 里，
-  代码和仓库中**不保存任何 Key**
-- 内置省、市、区县列表（34 省 / 392 市 / 3577 区县），手机页可直接选择
-- **没填 Host/Key 时，桌面和手机页一律显示 `-- --`**，不会显示假数据或报错
-- 天气数据按 10 分钟缓存，请求失败保留上一次结果
+- 主源 [UAPI](https://uapis.cn)（uapis.cn，免费无 Key）：带所选城市的 `adcode` 时按区划查，
+  否则按网络地址自动定位；城市、区划码和天气一个请求同时返回
+- 兜底 [Open-Meteo](https://open-meteo.com)（同样无 Key，按坐标查询，自带白天/夜晚标志）
+- 内置省、市、区县列表（34 省 / 392 市 / 3577 区县），手机页选择后按 adcode 查询；
+  「改回自动定位」恢复按网络定位，定位结果缓存 24 小时
+- **手机页的和风 API Host / Key 配置已移除**，天气不再需要任何账号
+- 每 30 分钟刷新一次（Quiet TV 的节奏），失败时保留上一次结果显示，超过 3 小时不再展示
 
-### 8. 联网校时
+### 8. 时钟直接取系统时间
 
-电视的 RTC 不走时，开机后系统时间会停在 2017 年，TLS 证书会因「尚未生效」校验失败。
+电视的 RTC 不走时，厂商的开机脚本（`init.bigfish.sh`）会把系统时间先设为 2017 年 1 月 1 日，
+联网后系统自己校回（实测 1～2 分钟）。
 
-- 启动时请求阿里源 HTTP `Date` 头，计算与本机时钟的偏移
-- 桌面时间直接显示校正后的时间，不依赖系统时间
-- `ClockTls` 在校正生效时按校正时间校验证书，并内置 ISRG Root X1，
-  保证系统时间错误时 HTTPS 仍然可用
+1.20 曾用淘宝 API + 阿里源 HTTP `Date` 头联网校时，并保留 7 天锚点用于开机第一时间修正。
+**1.21 应要求全部移除，桌面时间就是 `System.currentTimeMillis()`**：
+
+- 开机头一两分钟显示的是系统自己的时间（校准前的 8:00），系统校准后一直准确
+- 校时相关的明文 HTTP 域名白名单一并清理；`ClockTls` 按 `TimeSync.nowMs()`（即系统时间）
+  校验证书，并内置 ISRG Root X1，保证 Android 5 上 HTTPS 仍然可用
 
 ### 9. 创维背光控制（亮度键真正生效）
 
@@ -154,7 +161,7 @@ cd aerial-tv-skyworth
 ## 安装
 
 ```bash
-adb install -r aerial-skyworth-8h52-v1.20.apk
+adb install -r aerial-skyworth-8h52-v1.21.apk
 ```
 
 装完把电视的默认桌面指向 Aerial：
