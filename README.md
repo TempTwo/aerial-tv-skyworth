@@ -106,12 +106,6 @@ API Host 和 Key；**1.21 从 [BeatsAD/quiet-tv](https://github.com/BeatsAD/quie
 
 ### 8. 时钟直接取系统时间
 
-电视的 RTC 不走时，厂商的开机脚本（`init.bigfish.sh`）会把系统时间先设为 2017 年 1 月 1 日，
-联网后系统自己校回（实测 1～2 分钟）。
-
-1.20 曾用淘宝 API + 阿里源 HTTP `Date` 头联网校时，并保留 7 天锚点用于开机第一时间修正。
-**1.21 应要求全部移除，桌面时间就是 `System.currentTimeMillis()`**：
-
 - 开机头一两分钟显示的是系统自己的时间（校准前的 8:00），系统校准后一直准确
 - 校时相关的明文 HTTP 域名白名单一并清理；`ClockTls` 按 `TimeSync.nowMs()`（即系统时间）
   校验证书，并内置 ISRG Root X1，保证 Android 5 上 HTTPS 仍然可用
