@@ -137,8 +137,6 @@ API Host 和 Key；**1.21 从 [BeatsAD/quiet-tv](https://github.com/BeatsAD/quie
 | 分辨率 | 1920×1080 |
 | 内存 | 1.5 GB |
 
-已实测通过：首页、歌单、搜索、逐行歌词、全屏播放器、硬解 MP3 播放，
-右键菜单应用信息面板正常显示，常驻内存约 190 MB。
 
 ## 自己编译
 
